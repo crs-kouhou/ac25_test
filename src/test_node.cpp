@@ -27,7 +27,7 @@ namespace test {
 	using namespace ac_semi_2025::icp_on_svd;
 	using namespace ac_semi_2025::read_edges;
 	// using namespace ac_semi_2025::global_map;
-	using namespace ac_semi_2025:carrot_pursuit;
+	using namespace ac_semi_2025::carrot_pursuit;
 	using namespace ac25_test::ros_world;
 
 	// ロボの定数と状態
