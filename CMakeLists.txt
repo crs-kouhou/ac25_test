@@ -23,7 +23,7 @@ find_package(tf2_ros REQUIRED)
 #include pathを通す
 include_directories(
   include
-  ~/ac25_ws/ac25_test/include  # 場合によって変えてね
+  ~/ac25_ws/ac_semi_2025/include  # 場合によって変えてね
 )
 
 # メッセージ型の生成

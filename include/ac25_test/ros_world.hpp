@@ -26,7 +26,8 @@ namespace ac25_test::ros_world::impl {
 	using Eigen::Matrix2Xd;
 	using Eigen::Vector2d;
 
-	using geometry::Pose2d;
+	using ac_semi_2025::geometry::Pose2d;
+	using namespace ac_semi_2025::integer_type;
 
 	struct RosWorld final : rclcpp::Node {
 		std::unique_ptr<Matrix2Xd> laserscan{};

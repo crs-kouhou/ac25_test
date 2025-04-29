@@ -22,13 +22,13 @@ namespace test {
 	using Eigen::Matrix2Xd;
 	using Eigen::Vector2d;
 
-	using namespace ac25_test::integer_type;
-	using namespace ac25_test::geometry;
-	using namespace ac25_test::icp_on_svd;
-	using namespace ac25_test::read_edges;
-	// using namespace ac25_test::global_map;
+	using namespace ac_semi_2025::integer_type;
+	using namespace ac_semi_2025::geometry;
+	using namespace ac_semi_2025::icp_on_svd;
+	using namespace ac_semi_2025::read_edges;
+	// using namespace ac_semi_2025::global_map;
+	using namespace ac_semi_2025:carrot_pursuit;
 	using namespace ac25_test::ros_world;
-	using namespace ac25_test::carrot_pursuit;
 
 	// ロボの定数と状態
 	struct RobotConstant final {
