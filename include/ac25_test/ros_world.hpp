@@ -12,6 +12,8 @@
 
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/laser_scan.hpp>
+#include <sensor_msgs/msg/point_cloud2.hpp>
+#include <sensor_msgs/point_cloud2_iterator.hpp>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_ros/transform_broadcaster.h>
 
@@ -38,8 +40,8 @@ namespace ac25_test::ros_world::impl {
 		double th_max;
 		tf2_ros::TransformBroadcaster tf2_broadcaster;
 		rclcpp::Publisher<ac25_test::msg::Pose2d>::SharedPtr robot_speed_pub;
+		rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr laserscan_pub;
 		rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr lidar_sub;
-		rclcpp::Publisher<ac25_test::msg::Pose2d>::SharedPtr pose_pub;
 
 		RosWorld(std::stop_token&& stoken, const double th_min, const double th_max):
 			rclcpp::Node{"ros_world"}
@@ -48,6 +50,7 @@ namespace ac25_test::ros_world::impl {
 			, th_max{th_max}
 			, tf2_broadcaster{*this}
 			, robot_speed_pub{this->create_publisher<ac25_test::msg::Pose2d>("robot_speed", 10)}
+			, laserscan_pub{this->create_publisher<sensor_msgs::msg::PointCloud2>("laserscan", 10)}
 			, lidar_sub{this->create_subscription<sensor_msgs::msg::LaserScan>("scan", 10, [this](const sensor_msgs::msg::LaserScan::ConstSharedPtr msg) -> void {
 				this->laserscan_callback(msg);
 			})}
@@ -110,6 +113,35 @@ namespace ac25_test::ros_world::impl {
 				this->tf2_broadcaster.sendTransform(std::move(msg));
 				std::osyncstream osycerr{std::cerr};
 				std::println(osycerr, "broadcast.");
+			}
+		}
+
+		void publish_laserscan(const Eigen::Matrix2Xd& points) {
+			sensor_msgs::msg::PointCloud2 cloud{};
+			cloud.header.frame_id = "upsidedown_upsidedown_laser";
+			cloud.header.stamp = this->now();
+			cloud.height = 1;
+			cloud.width = points.cols();
+			cloud.is_dense = true;
+			cloud.is_bigendian = false;
+		
+			sensor_msgs::PointCloud2Modifier modifier(cloud);
+			modifier.setPointCloud2FieldsByString(1, "xyz");
+			modifier.resize(points.cols());
+		
+			sensor_msgs::PointCloud2Iterator<float> iter_x(cloud, "x");
+			sensor_msgs::PointCloud2Iterator<float> iter_y(cloud, "y");
+			sensor_msgs::PointCloud2Iterator<float> iter_z(cloud, "z");
+		
+			for (int i = 0; i < points.cols(); ++i, ++iter_x, ++iter_y, ++iter_z) {
+				*iter_x = static_cast<float>(points(0, i));
+				*iter_y = static_cast<float>(points(1, i));
+				*iter_z = 0.0f;
+			}
+		
+			{
+				std::unique_lock lck{this->mtx};
+				this->laserscan_pub->publish(std::move(cloud));
 			}
 		}
 
