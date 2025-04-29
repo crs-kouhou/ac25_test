@@ -137,7 +137,7 @@ namespace test {
 		std::jthread thread3{[node_sp, stoken = ssource.get_token()] {
 			/// グローバルな図形情報を読み出し
 			std::vector<Line2d> global_edges = [] {
-				if(const auto res = read_edges("src/ac25_test/data/field.dat"sv)) {
+				if(const auto res = read_edges("data/field.dat"sv)) {
 					std::vector<Line2d> ret{};
 					for(const auto& polygon : res.value()) {
 						const auto lines = polygon.to_edges();
@@ -157,7 +157,7 @@ namespace test {
 
 			/// ルート情報を読み出し
 			Polyline2d route = [] {
-				if(const auto res = read_route("src/ac25_test/data/test_route.dat"sv)) {
+				if(const auto res = read_route("data/test_route.dat"sv)) {
 					return res.value();
 				}
 				else {

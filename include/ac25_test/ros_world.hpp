@@ -96,7 +96,7 @@ namespace ac25_test::ros_world::impl {
 			geometry_msgs::msg::TransformStamped msg{};
 			msg.header.frame_id = "map";
 			msg.header.stamp = this->now();
-			msg.child_frame_id = "base_link";
+			msg.child_frame_id = "upsidedown_upsidedown_laser";
 			msg.transform.translation.x = pose.xy(0);
 			msg.transform.translation.y = pose.xy(1);
 			msg.transform.translation.z = 0.0;
