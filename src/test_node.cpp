@@ -17,6 +17,7 @@
 #include "carrot_pursuit.hpp"
 // #include "global_map.hpp"
 #include "ac25_test/ros_world.hpp"
+#include "ac25_test/debug_node.hpp"
 
 namespace test {
 	using Eigen::Matrix2Xd;
@@ -29,6 +30,7 @@ namespace test {
 	// using namespace ac_semi_2025::global_map;
 	using namespace ac_semi_2025::carrot_pursuit;
 	using namespace ac25_test::ros_world;
+	using namespace ac25_test::debug_node;
 
 	// ロボの定数と状態
 	struct RobotConstant final {
@@ -121,20 +123,26 @@ namespace test {
 				rclcpp::shutdown();
 			}
 		} shutdown{};
-		auto node_sp = std::make_shared<RosWorld> (
-			std::move(ssource.get_token())
+		auto ros_world_sp = std::make_shared<RosWorld> (
+			ssource.get_token()
 			, -std::numbers::pi / 2
 			, std::numbers::pi / 2
 		);
-		std::jthread thread2{[node_sp, stoken = ssource.get_token()] {
+		auto debug_node_sp = std::make_shared<DebugNode> (
+			ssource.get_token()
+		);
+		std::jthread thread2{[ros_world_sp, debug_node_sp, stoken = ssource.get_token()] {
+			rclcpp::executors::MultiThreadedExecutor exec{};
+			exec.add_node(ros_world_sp);
+			exec.add_node(debug_node_sp);
 			std::println("ros node start.");
 			while(!stoken.stop_requested()) {
-				rclcpp::spin_some(node_sp);
+				exec.spin_some();
 				std::this_thread::sleep_for(std::chrono::milliseconds(1));
 			}
 		}};
 
-		std::jthread thread3{[node_sp, stoken = ssource.get_token()] {
+		std::jthread thread3{[ros_world_sp, debug_node_sp, stoken = ssource.get_token()] {
 			/// グローバルな図形情報を読み出し
 			std::vector<Line2d> global_edges = [] {
 				if(const auto res = read_edges("data/field.dat"sv)) {
@@ -189,8 +197,8 @@ namespace test {
 			while(!stoken.stop_requested()) {
 				std::this_thread::sleep_for(std::chrono::milliseconds(1));
 				// calc world /////////////////////////////////////////////////////////////////////////
-				const auto laserscan = [node_sp, &control_input, &sim_clock] {
-					return node_sp->update(control_input, sim_clock.lap().count());
+				const auto laserscan = [ros_world_sp, &control_input, &sim_clock] {
+					return ros_world_sp->update(control_input, sim_clock.lap().count());
 				}();
 				if(!laserscan || laserscan->cols() == 0) continue;
 
@@ -199,8 +207,8 @@ namespace test {
 
 				// snapshot ///////////////////////////////////////////////////////////////////////////
 				std::println("{}", control_input.to_str());
-				node_sp->broadcast_pose(rb_state.icped_pose);
-				node_sp->publish_laserscan(*laserscan);
+				debug_node_sp->broadcast_pose(rb_state.icped_pose);
+				debug_node_sp->publish_laserscan(*laserscan);
 				// sim_state.snap(logger);
 				// rb_state.snap(logger);
 			}

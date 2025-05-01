@@ -38,9 +38,9 @@ namespace ac25_test::ros_world::impl {
 		std::stop_token stoken;
 		double th_min;
 		double th_max;
-		tf2_ros::TransformBroadcaster tf2_broadcaster;
+		// tf2_ros::TransformBroadcaster tf2_broadcaster;
 		rclcpp::Publisher<ac25_test::msg::Pose2d>::SharedPtr robot_speed_pub;
-		rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr laserscan_pub;
+		// rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr laserscan_pub;
 		rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr lidar_sub;
 
 		RosWorld(std::stop_token&& stoken, const double th_min, const double th_max):
@@ -48,9 +48,9 @@ namespace ac25_test::ros_world::impl {
 			, stoken{std::move(stoken)}
 			, th_min{th_min}
 			, th_max{th_max}
-			, tf2_broadcaster{*this}
+			// , tf2_broadcaster{*this}
 			, robot_speed_pub{this->create_publisher<ac25_test::msg::Pose2d>("robot_speed", 10)}
-			, laserscan_pub{this->create_publisher<sensor_msgs::msg::PointCloud2>("laserscan", 10)}
+			// , laserscan_pub{this->create_publisher<sensor_msgs::msg::PointCloud2>("laserscan", 10)}
 			, lidar_sub{this->create_subscription<sensor_msgs::msg::LaserScan>("scan", 10, [this](const sensor_msgs::msg::LaserScan::ConstSharedPtr msg) -> void {
 				this->laserscan_callback(msg);
 			})}
@@ -90,59 +90,6 @@ namespace ac25_test::ros_world::impl {
 			auto ret = std::move(this->laserscan);
 			this->laserscan.reset();
 			return ret;
-		}
-
-		void broadcast_pose(const Pose2d& pose) noexcept {
-			geometry_msgs::msg::TransformStamped msg{};
-			msg.header.frame_id = "map";
-			msg.header.stamp = this->now();
-			msg.child_frame_id = "upsidedown_upsidedown_laser";
-			msg.transform.translation.x = pose.xy(0);
-			msg.transform.translation.y = pose.xy(1);
-			msg.transform.translation.z = 0.0;
-			// 以下、ROS2の未整理で辛い型変換の部分。
-			// ここを調べていくと、ROS2から逃れたくなるだろう
-			tf2::Quaternion q{};
-			q.setRPY(0.0, 0.0, pose.th);
-			msg.transform.rotation.x = q.x();  // なんでtf2::Quaternionからrotationへの変換が無いんでしょうね
-			msg.transform.rotation.y = q.y();
-			msg.transform.rotation.z = q.z();
-			msg.transform.rotation.w = q.w();
-			{
-				std::unique_lock lck{this->mtx};
-				this->tf2_broadcaster.sendTransform(std::move(msg));
-				std::osyncstream osycerr{std::cerr};
-				std::println(osycerr, "broadcast.");
-			}
-		}
-
-		void publish_laserscan(const Eigen::Matrix2Xd& points) {
-			sensor_msgs::msg::PointCloud2 cloud{};
-			cloud.header.frame_id = "upsidedown_upsidedown_laser";
-			cloud.header.stamp = this->now();
-			cloud.height = 1;
-			cloud.width = points.cols();
-			cloud.is_dense = true;
-			cloud.is_bigendian = false;
-		
-			sensor_msgs::PointCloud2Modifier modifier(cloud);
-			modifier.setPointCloud2FieldsByString(1, "xyz");
-			modifier.resize(points.cols());
-		
-			sensor_msgs::PointCloud2Iterator<float> iter_x(cloud, "x");
-			sensor_msgs::PointCloud2Iterator<float> iter_y(cloud, "y");
-			sensor_msgs::PointCloud2Iterator<float> iter_z(cloud, "z");
-		
-			for (int i = 0; i < points.cols(); ++i, ++iter_x, ++iter_y, ++iter_z) {
-				*iter_x = static_cast<float>(points(0, i));
-				*iter_y = static_cast<float>(points(1, i));
-				*iter_z = 0.0f;
-			}
-		
-			{
-				std::unique_lock lck{this->mtx};
-				this->laserscan_pub->publish(std::move(cloud));
-			}
 		}
 
 		void laserscan_callback(const sensor_msgs::msg::LaserScan::ConstSharedPtr msg) noexcept {
