@@ -140,6 +140,10 @@ namespace test {
 				exec.spin_some();
 				std::this_thread::sleep_for(std::chrono::milliseconds(1));
 			}
+			
+			std::println("ros node end. shutdown start...");
+			// std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+			// std::println("ros node end. shutdown wait end.");
 		}};
 
 		std::jthread thread3{[ros_world_sp, debug_node_sp, stoken = ssource.get_token()] {
@@ -200,18 +204,22 @@ namespace test {
 				const auto laserscan = [ros_world_sp, &control_input, &sim_clock] {
 					return ros_world_sp->update(control_input, sim_clock.lap().count());
 				}();
-				if(!laserscan || laserscan->cols() == 0) continue;
 
 				// calc robot /////////////////////////////////////////////////////////////////////////
-				control_input = robot_update(rb_cons, rb_state, *laserscan, robo_clock.lap().count());
+				if(laserscan && laserscan->cols() != 0) {
+					control_input = robot_update(rb_cons, rb_state, *laserscan, robo_clock.lap().count());
+				}
 
 				// snapshot ///////////////////////////////////////////////////////////////////////////
 				std::println("{}", control_input.to_str());
 				debug_node_sp->broadcast_pose(rb_state.icped_pose);
-				debug_node_sp->publish_laserscan(*laserscan);
+				if(laserscan) debug_node_sp->publish_laserscan(*laserscan);
+				debug_node_sp->publish_polyline(rb_cons.global_edges);
 				// sim_state.snap(logger);
 				// rb_state.snap(logger);
 			}
+
+			std::println("main loop end");
 		}};
 	}
 }

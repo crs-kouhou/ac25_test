@@ -1,31 +1,37 @@
 #pragma once
 
 #include <cmath>
-#include <utility>
+#include <condition_variable>
 #include <memory>
 #include <mutex>
-#include <condition_variable>
 #include <stop_token>
 #include <syncstream>
+#include <utility>
 
 #include <eigen3/Eigen/Dense>
 
 #include <rclcpp/rclcpp.hpp>
+
+#include <geometry_msgs/msg/point.hpp>
 #include <sensor_msgs/msg/laser_scan.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <sensor_msgs/point_cloud2_iterator.hpp>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_ros/transform_broadcaster.h>
+#include <visualization_msgs/msg/marker.hpp>
 
 #include <ac25_test/msg/pose2d.hpp>
 
-#include "utility.hpp"
 #include "geometry.hpp"
+#include "utility.hpp"
 
 namespace ac25_test::debug_node::impl {
 	using namespace std::chrono_literals;
 
+	using Eigen::Vector2d;
+
 	using ac_semi_2025::geometry::Pose2d;
+	using ac_semi_2025::geometry::Line2d;
 	using namespace ac_semi_2025::integer_type;
 
 	struct DebugNode final : rclcpp::Node {
@@ -34,12 +40,14 @@ namespace ac25_test::debug_node::impl {
 		std::stop_token stoken;
 		tf2_ros::TransformBroadcaster tf2_broadcaster;
 		rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr laserscan_pub;
+		rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr marker_pub;
 
-		DebugNode(std::stop_token&& stoken):
-			rclcpp::Node{"ros_world"}
+		DebugNode(std::stop_token&& stoken)
+			: rclcpp::Node{"debug_node"}
 			, stoken{std::move(stoken)}
 			, tf2_broadcaster{*this}
 			, laserscan_pub{this->create_publisher<sensor_msgs::msg::PointCloud2>("laserscan", 10)}
+			, marker_pub{this->create_publisher<visualization_msgs::msg::Marker>("lines", 10)}
 		{}
 
 		virtual ~DebugNode() override = default;
@@ -85,7 +93,7 @@ namespace ac25_test::debug_node::impl {
 			sensor_msgs::PointCloud2Iterator<float> iter_y(cloud, "y");
 			sensor_msgs::PointCloud2Iterator<float> iter_z(cloud, "z");
 		
-			for (int i = 0; i < points.cols(); ++i, ++iter_x, ++iter_y, ++iter_z) {
+			for(int i = 0; i < points.cols(); ++i, ++iter_x, ++iter_y, ++iter_z) {
 				*iter_x = static_cast<float>(points(0, i));
 				*iter_y = static_cast<float>(points(1, i));
 				*iter_z = 0.0f;
@@ -94,6 +102,40 @@ namespace ac25_test::debug_node::impl {
 			{
 				std::unique_lock lck{this->mtx};
 				this->laserscan_pub->publish(std::move(cloud));
+			}
+		}
+
+		void publish_polyline(const std::vector<Line2d>& polyline) {
+			visualization_msgs::msg::Marker marker;
+			marker.header.frame_id = "map";  // 例: 座標フレーム
+			marker.header.stamp = rclcpp::Clock().now();
+			marker.ns = "lines";
+			marker.id = 0;
+			marker.type = visualization_msgs::msg::Marker::LINE_LIST;
+			marker.action = visualization_msgs::msg::Marker::ADD;
+			marker.scale.x = 0.05;  // 線の太さ
+
+			marker.color.r = 1.0;
+			marker.color.g = 0.0;
+			marker.color.b = 0.0;
+			marker.color.a = 1.0;
+
+			constexpr auto to_point_msg = [](const Vector2d& v) -> geometry_msgs::msg::Point {
+				geometry_msgs::msg::Point msg{};
+				msg.x = v(0);
+				msg.y = v(1);
+				msg.z = 0;
+				return msg;
+			};
+
+			for(const auto& seg : polyline) {
+				marker.points.push_back(to_point_msg(seg.p1));
+				marker.points.push_back(to_point_msg(seg.p2));
+			}
+
+			{
+				std::unique_lock lck{this->mtx};
+				this->marker_pub->publish(marker);
 			}
 		}
 	};

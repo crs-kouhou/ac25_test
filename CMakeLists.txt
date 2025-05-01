@@ -14,6 +14,8 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(visualization_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 # uncomment the following section in order to fill in
@@ -41,6 +43,8 @@ add_executable(test_node src/test_node.cpp)
 ament_target_dependencies(test_node
   rclcpp
   sensor_msgs
+  geometry_msgs
+  visualization_msgs
   tf2
   tf2_ros
 )

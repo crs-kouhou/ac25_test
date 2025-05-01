@@ -19,6 +19,9 @@
 
   <!-- sensor_msgs::msg::LaserScanのため -->
   <depend>sensor_msgs</depend>
+  <!-- デバッグ用publishのため -->
+  <depend>geometry_msgs</depend>
+  <depend>visualization_msgs</depend>
 
   <!-- RosWorld::broadcast_poseのため -->
   <depend>tf2</depend>
