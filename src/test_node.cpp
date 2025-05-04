@@ -48,7 +48,7 @@ namespace test {
 	};
 
 	// ロボの更新式
-	inline auto robot_update(const RobotConstant& cons, RobotState& state, const Matrix2Xd& laserscan, const double/*, auto& debug_node_sp*/) noexcept(false) -> Pose2d {
+	inline auto robot_update(const RobotConstant& cons, RobotState& state, const Matrix2Xd& laserscan, const double /*dt, auto& debug_node_sp*/) noexcept(false) -> Pose2d {
 		// read state /////////////////////////////////////////////////////////////////////////////
 		const auto pose = state.pose;
 
@@ -59,7 +59,7 @@ namespace test {
 		for(auto& edge : edges) {
 			edge = Line2d{g2l * edge.p1, g2l * edge.p2};
 		}
-		const auto l2new_l = icp_p2l(laserscan, edges, cons.number_of_iteration/*, debug_node_sp*/);
+		const auto l2new_l = icp_p2l(laserscan, edges, cons.number_of_iteration/*, debug_node_sp*/).inverse();
 		const auto new_pose = Pose2d::from_isometry((l2new_l * g2l).inverse());
 
 		// calc control input /////////////////////////////////////////////////////////////////////
@@ -217,6 +217,8 @@ namespace test {
 				debug_node_sp->publish_polyline(rb_cons.global_edges, "map"sv, "lines"sv);
 				// sim_state.snap(logger);
 				// rb_state.snap(logger);
+
+				// std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 			}
 
 			std::println("main loop end");
