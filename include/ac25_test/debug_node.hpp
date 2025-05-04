@@ -5,6 +5,7 @@
 #include <memory>
 #include <mutex>
 #include <stop_token>
+#include <string_view>
 #include <syncstream>
 #include <utility>
 
@@ -52,11 +53,11 @@ namespace ac25_test::debug_node::impl {
 
 		virtual ~DebugNode() override = default;
 
-		void broadcast_pose(const Pose2d& pose) noexcept {
+		void broadcast_pose(const Pose2d& pose, const std::string_view frame_id, const std::string_view child_frame_id) noexcept {
 			geometry_msgs::msg::TransformStamped msg{};
-			msg.header.frame_id = "map";
+			msg.header.frame_id = frame_id;
 			msg.header.stamp = this->now();
-			msg.child_frame_id = "usdusd_laser";
+			msg.child_frame_id = child_frame_id;
 			msg.transform.translation.x = pose.xy(0);
 			msg.transform.translation.y = pose.xy(1);
 			msg.transform.translation.z = 0.0;
@@ -76,9 +77,9 @@ namespace ac25_test::debug_node::impl {
 			}
 		}
 
-		void publish_laserscan(const Eigen::Matrix2Xd& points) {
+		void publish_laserscan(const Eigen::Matrix2Xd& points, const std::string_view frame_id) {
 			sensor_msgs::msg::PointCloud2 cloud{};
-			cloud.header.frame_id = "usdusd_laser";
+			cloud.header.frame_id = frame_id;
 			cloud.header.stamp = this->now();
 			cloud.height = 1;
 			cloud.width = points.cols();
@@ -105,11 +106,11 @@ namespace ac25_test::debug_node::impl {
 			}
 		}
 
-		void publish_polyline(const std::vector<Line2d>& polyline) {
+		void publish_polyline(const std::vector<Line2d>& polyline, const std::string_view frame_id, const std::string_view marker_ns) {
 			visualization_msgs::msg::Marker marker;
-			marker.header.frame_id = "map";  // 例: 座標フレーム
+			marker.header.frame_id = frame_id;  // 例: 座標フレーム
 			marker.header.stamp = rclcpp::Clock().now();
-			marker.ns = "lines";
+			marker.ns = marker_ns;
 			marker.id = 0;
 			marker.type = visualization_msgs::msg::Marker::LINE_LIST;
 			marker.action = visualization_msgs::msg::Marker::ADD;
