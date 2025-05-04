@@ -20,6 +20,8 @@
 #include "ac25_test/debug_node.hpp"
 
 namespace test {
+	using namespace std::string_view_literals;
+
 	using Eigen::Matrix2Xd;
 	using Eigen::Vector2d;
 
@@ -46,19 +48,19 @@ namespace test {
 	};
 
 	// ロボの更新式
-	inline auto robot_update(const RobotConstant& cons, RobotState& state, const Matrix2Xd& laserscan, const double dt) noexcept(false) -> Pose2d {
+	inline auto robot_update(const RobotConstant& cons, RobotState& state, const Matrix2Xd& laserscan, const double/*, auto& debug_node_sp*/) noexcept(false) -> Pose2d {
 		// read state /////////////////////////////////////////////////////////////////////////////
 		const auto pose = state.pose;
 
 		// ICP on SVD /////////////////////////////////////////////////////////////////////////////
 		// const auto visible_edges = cons.map.make_visible_lines(pose);
-		const auto g2l = pose.homogeneous_transform().inverse();
+		const auto g2l = pose.to_isometry().inverse();
 		auto edges = cons.global_edges;
 		for(auto& edge : edges) {
 			edge = Line2d{g2l * edge.p1, g2l * edge.p2};
 		}
-		const auto new_pose = icp_p2l(laserscan, edges, cons.number_of_iteration);
-
+		const auto l2new_l = icp_p2l(laserscan, edges, cons.number_of_iteration/*, debug_node_sp*/);
+		const auto new_pose = Pose2d::from_isometry((l2new_l * g2l).inverse());
 
 		// calc control input /////////////////////////////////////////////////////////////////////
 		const auto speed = cons.carrot.update(cons.route.vertices, new_pose, state.closest_milestone_index);
@@ -97,8 +99,6 @@ namespace test {
 	};
 
 	void main(int argc, char ** argv) {
-		using namespace std::string_view_literals;
-
 		if(const auto cwd = std::filesystem::current_path().string();
 			!cwd.ends_with("ws/")
 			&& !cwd.ends_with("ws")
@@ -207,14 +207,14 @@ namespace test {
 
 				// calc robot /////////////////////////////////////////////////////////////////////////
 				if(laserscan && laserscan->cols() != 0) {
-					control_input = robot_update(rb_cons, rb_state, *laserscan, robo_clock.lap().count());
+					control_input = robot_update(rb_cons, rb_state, *laserscan, robo_clock.lap().count()/*, debug_node_sp*/);
 				}
 
 				// snapshot ///////////////////////////////////////////////////////////////////////////
 				std::println("{}", control_input.to_str());
-				debug_node_sp->broadcast_pose(rb_state.icped_pose);
-				if(laserscan) debug_node_sp->publish_laserscan(*laserscan);
-				debug_node_sp->publish_polyline(rb_cons.global_edges);
+				debug_node_sp->broadcast_pose(rb_state.icped_pose, "map"sv, "usdusd_laser"sv);
+				if(laserscan) debug_node_sp->publish_laserscan(*laserscan, "usdusd_laser"sv);
+				debug_node_sp->publish_polyline(rb_cons.global_edges, "map"sv, "lines"sv);
 				// sim_state.snap(logger);
 				// rb_state.snap(logger);
 			}
