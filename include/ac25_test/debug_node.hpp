@@ -56,7 +56,7 @@ namespace ac25_test::debug_node::impl {
 			geometry_msgs::msg::TransformStamped msg{};
 			msg.header.frame_id = "map";
 			msg.header.stamp = this->now();
-			msg.child_frame_id = "upsidedown_upsidedown_laser";
+			msg.child_frame_id = "usdusd_laser";
 			msg.transform.translation.x = pose.xy(0);
 			msg.transform.translation.y = pose.xy(1);
 			msg.transform.translation.z = 0.0;
@@ -78,7 +78,7 @@ namespace ac25_test::debug_node::impl {
 
 		void publish_laserscan(const Eigen::Matrix2Xd& points) {
 			sensor_msgs::msg::PointCloud2 cloud{};
-			cloud.header.frame_id = "upsidedown_upsidedown_laser";
+			cloud.header.frame_id = "usdusd_laser";
 			cloud.header.stamp = this->now();
 			cloud.height = 1;
 			cloud.width = points.cols();
