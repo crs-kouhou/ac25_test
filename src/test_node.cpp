@@ -197,14 +197,14 @@ namespace test {
 				}
 				, .carrot = CarrotPursuit::make (
 					FeedForwardedPid::Constant {
-						.kp = 1.0
+						.kp = 3.0
 						, .ki = 0.0
 						, .kd = 0.0
 						, .i_max = 0.0
-						, .feed_forward = 0.1
+						, .feed_forward = 0.7
 					}
 					, FeedForwardedPid::Constant {
-						.kp = 1.0
+						.kp = 3.0
 						, .ki = 0.0
 						, .kd = 0.0
 						, .i_max = 0.0
