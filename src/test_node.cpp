@@ -201,7 +201,7 @@ namespace test {
 						, .ki = 0.0
 						, .kd = 0.0
 						, .i_max = 0.0
-						, .feed_forward = 0.7
+						, .feed_forward = 1.3
 					}
 					, FeedForwardedPid::Constant {
 						.kp = 3.0
@@ -244,7 +244,7 @@ namespace test {
 				
 				robot.pose = robot.pose + control_input * sim_clock.watch().count();
 
-				std::println("{}", control_input.to_str());
+				std::println(std::cerr, "{}", control_input.to_str());
 				debug_node_sp->broadcast_pose(robot.pose, "map"sv, "usdusd_laser"sv);
 				if(laserscan) debug_node_sp->publish_laserscan(*laserscan, "usdusd_laser"sv);
 				debug_node_sp->publish_polyline(robot.cons.global_edges, "map"sv, "lines"sv);
