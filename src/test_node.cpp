@@ -210,6 +210,13 @@ namespace test {
 						, .i_max = 0.0
 						, .feed_forward = 0.0
 					}
+					, FeedForwardedPid::Constant {
+						.kp = 1.0
+						, .ki = 0.0
+						, .kd = 0.1
+						, .i_max = 0.0
+						, .feed_forward = 0.0
+					}
 				)
 				, .pose = Pose2d{Vector2d{0.5, 0.5}, 0.0}
 			};
