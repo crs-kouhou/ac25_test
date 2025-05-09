@@ -208,7 +208,7 @@ namespace test {
 						, .ki = 0.0
 						, .kd = 0.0
 						, .i_max = 0.0
-						, .feed_forward = 0.1
+						, .feed_forward = 0.0
 					}
 				)
 				, .pose = Pose2d{Vector2d{0.5, 0.5}, 0.0}
