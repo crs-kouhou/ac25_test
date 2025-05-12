@@ -204,7 +204,7 @@ namespace test {
 						, .feed_forward = 1.3
 					}
 					, FeedForwardedPid::Constant {
-						.kp = 3.0
+						.kp = 4.0
 						, .ki = 0.0
 						, .kd = 0.0
 						, .i_max = 0.0
@@ -242,7 +242,7 @@ namespace test {
 					control_input = Pose2d{Vector2d::Zero(), 0.0};
 				}
 				
-				robot.pose = robot.pose + control_input * sim_clock.watch().count();
+				// robot.pose = robot.pose + control_input * sim_clock.watch().count();
 
 				std::println(std::cerr, "{}", control_input.to_str());
 				debug_node_sp->broadcast_pose(robot.pose, "map"sv, "usdusd_laser"sv);
